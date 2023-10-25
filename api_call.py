@@ -5,24 +5,8 @@ import urllib.parse
 
 #global variables 
 
-#catagory place holder
-catagory = ""
 #base url 
 base_url = 'https://api.census.gov/data/timeseries/eits/'
-#indicator datasets interpreted as catagories 
-catagories = {
-    "Construction Spending (VIP)": "vip",
-    "New Residential Sales (NRS)": "ressales",
-    "New Residential Construction (NRC)": "resconst",
-    "Monthly Wholesale Trade Inventories": "mwts",
-    "Advance Monthly Retail Sales (MARTS)": "marts",
-    "Monthly Trade & Inventory Sales (MTIS)": "mtis",
-    "Monthly Retail Sales (MRTS)": "mrts",
-    "International Trade (FTD)": "ftd",
-    "Housing Vacancies & Homeownership Rate": "hv",
-    "Quarterly Financial Report (QFR)": "qfr",
-    "Quarterly Summary of State and Local Taxes": "qtax"
-}
 #parameters needed for the api call
 url_params  = {
      
@@ -35,10 +19,6 @@ url_params  = {
     "for": "for",
     "time": "2019"
 }
-
-
-
-
 
 
 def format_url(base_url):
@@ -79,11 +59,11 @@ format_url(base_url)
 
 
 
-
+#send HTTPS request
 def api_call(f_url): 
 
         try:
-            response = requests.get(url)
+            response = requests.get(f_url)
 
             
             if response.status_code == 200:
