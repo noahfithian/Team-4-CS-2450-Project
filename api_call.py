@@ -2,6 +2,7 @@ import json
 import pprint
 import requests
 import urllib.parse
+import datetime
 
 #global variables 
 #blank 
@@ -129,7 +130,7 @@ def format_url():
     "Quarter 4": "Q4"
 }
     #starting year
-    time='2000'
+    time=''
     quarter = ''
     data_type_code=''
     catagory_code=''
@@ -137,6 +138,27 @@ def format_url():
 
     print("Welcome to the Quarterly Summary of State and Local Taxes and entire United states Information Graph")
     choice = input("Please choose if you would like to see state data (type 'state') or the entire U.S. data (type 'us'): ")
+    import datetime
+
+    try:
+
+        time = int(input("Enter a year (1993 to 2023): "))
+        current_year = datetime.datetime.now().year
+
+        if time <= current_year and time > 1992:
+            print("Valid year entered:", time)
+        else:
+            raise ValueError("Year must be greater than 1992 and less than or equal to the current year (2023).")
+
+    except ValueError as e:
+        
+        print("Error:", e)
+
+    except Exception as e:
+        
+        print("An unexpected error occurred:", e)
+
+   
 
     #state logic to format url
     if choice == "state":
