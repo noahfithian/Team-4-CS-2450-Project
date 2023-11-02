@@ -16,8 +16,9 @@ def api_call(f_url):
             
             if response.status_code == 200:
             
-                data = response.json()  
-                pprint.pprint(data)
+                data = response.json()
+                # pprint.pprint(data)
+                return data
                 
             else:
                 # If the request was not successful, handle the error
@@ -242,5 +243,5 @@ def format_url():
                     api_call(formated_us)
 
 
-format_url()
+
 
