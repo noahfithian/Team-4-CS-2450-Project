@@ -1,19 +1,27 @@
 import numpy
+import matplotlib
 import datetime
-#sales data is in millions of dollars
 import api_call
 
+#sales data is in millions of dollars
 
 def getData():
-    print("Hello world")
-    link = format_url_constraints('us', 1999, 'Quarter 1', 'T14', 'QTAXCAT1', 'Utah')
+    link = format_url_constraints('state', 2005, 2006, 'Quarter 1', 'T13', 'QTAXCAT1', 'All')
     print(link)
-    api_call.api_call(link)
+    data = api_call.api_call(link)
 
+    print("Loop")
+    for d in data:
+        cell_value = d[0]
+        state_name = d[1]
+        time = d[6]
+        if cell_value != 'CELL_VALUE':
+            print(f'State: {state_name} ({time}) Value (in billions): {int(cell_value) / 1_000}')
 
-def format_url_constraints(ch, t, q, d, c, s):
+def format_url_constraints(ch, t, t2, q, d, c, s):
     choice = ch
     time = t
+    end_time = t2
     quarter = q
     data_type_code = d
     catagory_code = c
@@ -119,7 +127,8 @@ def format_url_constraints(ch, t, q, d, c, s):
         current_year = datetime.datetime.now().year
 
         if current_year >= time > 1992:
-            print("Valid year entered:", time)
+            print()
+            # print("Valid year entered:", time)
         else:
             raise ValueError("Year must be greater than 1992 and less than or equal to the current year ", current_year, ".")
 
@@ -144,7 +153,7 @@ def format_url_constraints(ch, t, q, d, c, s):
                     print("Invalid quarter.")
                 else:
                     # Construct the URL
-                    formated_us = f'https://api.census.gov/data/timeseries/eits/qtax?get=NAME,SEASONALLY_ADJ,TIME_SLOT_DATE,CELL_VALUE,ERROR_DATA,CATEGORY_CODE&=DATA_TYPE_CODE={data_type_code}&for=state:{state_dict[state]}&time={time}-{quarter_dict[quarter]}'
+                    formated_us = f'https://api.census.gov/data/timeseries/eits/qtax?get=CELL_VALUE,NAME,SEASONALLY_ADJ,TIME_SLOT_DATE,ERROR_DATA,CATEGORY_CODE&=DATA_TYPE_CODE={data_type_code}&for=state:{state_dict[state]}&time=from+{time}-{quarter_dict[quarter]}+to+{end_time}'
                     # print(formated_us)
                     # print(
                     #     f"You chose to see the entire {state_dict[state]} state data with category code {catagory_code}, data type code {data_type_code}, and quarter {quarter_dict[quarter]}.")
@@ -168,7 +177,7 @@ def format_url_constraints(ch, t, q, d, c, s):
                     print("Invalid quarter.")
                 else:
                     # Construct the URL
-                    formated_us = f'https://api.census.gov/data/timeseries/eits/qtax?get=NAME,SEASONALLY_ADJ,TIME_SLOT_DATE,CELL_VALUE,ERROR_DATA&=CATEGORY_CODE={catagory_code}&=DATA_TYPE_CODE={data_type_code}&for=us:*&time={time}-{quarter_dict[quarter]}'
+                    formated_us = f'https://api.census.gov/data/timeseries/eits/qtax?get=CELL_VALUE,NAME,SEASONALLY_ADJ,TIME_SLOT_DATE,ERROR_DATA&=CATEGORY_CODE={catagory_code}&=DATA_TYPE_CODE={data_type_code}&for=us:*&time=from+{time}-{quarter_dict[quarter]}+to+{end_time}'
                     # print(formated_us)
                     # print(
                     #     "You chose to see the entire U.S. data with category code {catagory_code}, data type code {data_type_code}, and quarter {quarter_dict[quarter]}.")
@@ -176,4 +185,4 @@ def format_url_constraints(ch, t, q, d, c, s):
                     # api_call(formated_us)
                     return formated_us
 
-getData()
+# getData()
