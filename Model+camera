@@ -1,0 +1,156 @@
+#save kaggle token (.json) in the same workfolder 
+# Import dependencies
+import os
+import cv2
+import numpy as np
+import tensorflow as tf
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from keras.applications import VGG19
+import matplotlib.pyplot as plt
+from keras.layers import Dropout, Flatten, BatchNormalization
+from keras.layers import Dense, MaxPooling2D, Conv2D
+from keras.layers import Input, Activation, Add
+from keras.models import Model
+from keras.regularizers import l2
+from keras.optimizers import Adam
+from keras.callbacks import ModelCheckpoint
+from sklearn.model_selection import KFold
+from kaggle.api.kaggle_api import KaggleApi
+import cv2
+import numpy as np
+
+def myModel(image_size, num_classes):
+  #Use the pre-trained weights from the imagenet dataset
+  data_model = VGG19(weights='imagenet',
+                    include_top=False,
+                    input_shape=(48,48,3),
+                    classifier_activation='relu',
+                    )
+
+  print("Successfully loaded inital VGG Model")
+  print(data_model.summary())
+
+  #Freeze current VGG19 layers
+  for layer in data_model.layers[:20]:
+    layer.trainable = False
+
+  #Add additional layers starting at the VGG19 output layer
+  x = data_model.output
+  x = Flatten()(x)
+  x = Dense(528, activation='relu')(x)
+  x = BatchNormalization()(x)
+  x = Dropout(0.2)(x)
+  x = Dense(256, activation='relu')(x)
+  x = BatchNormalization()(x)
+  x = Dropout(0.2)(x)
+  predict = Dense(num_classes, activation='softmax')(x)
+
+  model = Model(inputs=data_model.input, outputs=predict)
+
+  return model
+
+#parse through files
+def ck_plus_load(data_set_location):
+
+  #Empty arrays for file inputs
+  images = []
+  labels = []
+
+  #Tuple of emotions and associated number
+  emotions = {0:'anger', 1:'contempt',2:'disgust', 3:'fear',4:'happy', 5:'sadness', 6:'surprise'}
+  num_classes = len(emotions)
+
+  for emotion_index, emotion_name in emotions.items():
+    #read sub folders based on emotion category names
+    sub_set_location = os.path.join(data_set_location , emotion_name)
+    print(sub_set_location)
+
+    #Read files/images in each folder associated with emotion name
+    for emotion_file in os.listdir(sub_set_location):
+      image_path = os.path.join(sub_set_location, emotion_file)
+
+      #read each image
+      img = cv2.imread(image_path)
+      img = cv2.resize(img,(48,48))
+      img = np.expand_dims(img, axis =-1)
+
+      images.append(img)
+      labels.append(emotion_index)
+
+  # Normalize pixels
+  images = np.array(images, dtype=np.float32) / 255.0
+  labels = np.array(labels)
+  # encoding the labels
+  labels = tf.keras.utils.to_categorical(labels, num_classes=num_classes)
+
+  # Split into 80:20 train and test sets
+  X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.20, random_state=1)
+
+  return X_train, X_test, y_train, y_test
+
+#variable to pull in dataset files
+data_set_location = r'faces'
+
+X_train, x_test, y_train, y_test = ck_plus_load(data_set_location)
+
+image_size = (48,48,3)
+num_classes = 7
+
+# Create and compile the model
+model = myModel(image_size, num_classes)
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Train the model
+model.fit(X_train, y_train, epochs=17, validation_data=(x_test, y_test))
+model.save("emotionModel.keras")
+model.save("emotionModel.h5")
+
+###########Webcam Emotion Detection section####
+
+print("Testing 1")
+
+# Load the trained model
+model = tf.keras.models.load_model("emotionModel.keras")
+print("Testing 2")
+
+# Function to predict emotion from webcam feed
+def predict_emotion():
+    emotions = {0: 'anger', 1: 'contempt', 2: 'disgust', 3: 'fear', 4: 'happy', 5: 'sadness', 6: 'surprise'}
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+      print("Testing 3")
+
+    while True:
+        ret, frame = cap.read()
+        print(ret)
+        if not ret:
+            print("Error reading frame from webcam.")
+            break
+
+        print("Frame shape:", frame.shape)
+
+        img = cv2.resize(frame, (48, 48))
+        img = np.expand_dims(img, axis=0)
+        img = img / 255.0
+
+        print("Resized image shape:", img.shape)
+
+        predictions = model.predict(img)
+        print("Predictions shape:", predictions.shape)
+        print("Predictions:", predictions)
+
+        emotion_label = emotions[np.argmax(predictions)]
+        print("Detected emotion:", emotion_label)
+
+        cv2.putText(frame, emotion_label, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        cv2.imshow('Emotion Detection', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+# Run emotion prediction from webcam
+predict_emotion()
